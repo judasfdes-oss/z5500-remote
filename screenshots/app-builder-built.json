@@ -1,0 +1,38 @@
+{
+  "url": "http://127.0.0.1:8081/",
+  "viewports": {
+    "desktop": {
+      "width": 1280,
+      "height": 800,
+      "status": 200,
+      "title": "Z-5500 Deck",
+      "hasCanvas": false,
+      "bodyTextLen": 1058,
+      "bodyTextHash": "194ac9c34c8d776082ffce9eaaa781f1c4c03863aa37044b7afeb7e8b8078852",
+      "bodyTextPrefix": "DIGITAL SPEAKER SYSTEM Z-5500 No IR emitter 38 kHz NEC CONSUMERI",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-built.png"
+    },
+    "mobile": {
+      "width": 390,
+      "height": 844,
+      "status": 200,
+      "title": "Z-5500 Deck",
+      "hasCanvas": false,
+      "bodyTextLen": 1058,
+      "bodyTextHash": "194ac9c34c8d776082ffce9eaaa781f1c4c03863aa37044b7afeb7e8b8078852",
+      "bodyTextPrefix": "DIGITAL SPEAKER SYSTEM Z-5500 No IR emitter 38 kHz NEC CONSUMERI",
+      "horizontalOverflow": false,
+      "consoleErrors": [],
+      "pageErrors": [],
+      "screenshot": "/workspace/screenshots/app-builder-built-mobile.png"
+    }
+  },
+  "brandWarnings": [],
+  "authWarnings": [],
+  "verdictFile": "/workspace/screenshots/app-builder-built.json",
+  "divergesFromBaseline": false,
+  "baselineReasons": []
+}
