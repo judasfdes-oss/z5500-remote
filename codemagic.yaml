@@ -10,8 +10,8 @@ workflows:
         script: npm install
       - name: Build Android APK
         script: |
-          cd android
           chmod +x gradlew
           ./gradlew assembleRelease
     artifacts:
+      - app/build/outputs/apk/release/*.apk
       - android/app/build/outputs/apk/release/*.apk
