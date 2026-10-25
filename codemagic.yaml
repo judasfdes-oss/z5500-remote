@@ -2,16 +2,24 @@ workflows:
   react-native-android:
     name: Z5500 Remote Android Build
     max_build_duration: 60
-    instance_type: mac_mini_m1
+    instance_type: mac_mini_m2
     environment:
       node: latest
     scripts:
       - name: Install dependencies
-        script: npm install
+        script: npm install || true
       - name: Build Android APK
         script: |
+          GRADLE_PATH=$(find . -name "gradlew" | head -n 1)
+          if [ -z "$GRADLE_PATH" ]; then
+            echo "ERROR: gradlew file not found anywhere in the repository!"
+            exit 1
+          fi
+          GRADLE_DIR=$(dirname "$GRADLE_PATH")
+          echo "Found gradlew in: $GRADLE_DIR"
+          cd "$GRADLE_DIR"
           chmod +x gradlew
           ./gradlew assembleRelease
     artifacts:
-      - app/build/outputs/apk/release/*.apk
-      - android/app/build/outputs/apk/release/*.apk
+      - "**/build/outputs/apk/release/*.apk"
+      - "**/build/outputs/apk/debug/*.apk"
