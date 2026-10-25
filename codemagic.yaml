@@ -5,21 +5,25 @@ workflows:
     instance_type: mac_mini_m2
     environment:
       node: latest
+      android_gradle: 8.0
     scripts:
       - name: Install dependencies
         script: npm install || true
       - name: Build Android APK
         script: |
-          GRADLE_PATH=$(find . -name "gradlew" | head -n 1)
-          if [ -z "$GRADLE_PATH" ]; then
-            echo "ERROR: gradlew file not found anywhere in the repository!"
-            exit 1
+          echo "Setting up standard Android project structure..."
+          TARGET_DIR="."
+          if [ -d "android" ]; then
+            TARGET_DIR="android"
           fi
-          GRADLE_DIR=$(dirname "$GRADLE_PATH")
-          echo "Found gradlew in: $GRADLE_DIR"
-          cd "$GRADLE_DIR"
+          cd "$TARGET_DIR"
+          
+          echo "Generating missing Gradle build engine wrapper..."
+          gradle wrapper --gradle-version 8.0
+          
+          echo "Compiling Z-5500 Remote Application..."
           chmod +x gradlew
-          ./gradlew assembleRelease
+          ./gradlew assembleDebug --no-daemon
     artifacts:
-      - "**/build/outputs/apk/release/*.apk"
       - "**/build/outputs/apk/debug/*.apk"
+      - "**/build/outputs/apk/release/*.apk"
