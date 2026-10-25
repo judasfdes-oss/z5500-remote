@@ -7,32 +7,130 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-runs-on: ubuntu-latest
     steps:
-    - uses: actions/checkout@v4
+    - name: Generate Clean Android Project From Scratch
+      run: |
+        mkdir -p clean-app/app/src/main/java/com/logitech/z5500remote
+        mkdir -p clean-app/app/src/main/res/values
+        
+        # Write root settings.gradle
+        cat << 'EOF' > clean-app/settings.gradle
+        include ':app'
+        EOF
+        
+        # Write root build.gradle
+        cat << 'EOF' > clean-app/build.gradle
+        buildscript {
+            repositories { google(); mavenCentral() }
+            dependencies { classpath 'com.android.tools.build:gradle:8.2.2' }
+        }
+        allprojects {
+            repositories { google(); mavenCentral() }
+        }
+        EOF
+        
+        # Write app build.gradle
+        cat << 'EOF' > clean-app/app/build.gradle
+        plugins { id 'com.android.application' }
+        android {
+            namespace 'com.logitech.z5500remote'
+            compileSdk 34
+            defaultConfig {
+                applicationId "com.logitech.z5500remote"
+                minSdk 21
+                targetSdk 34
+                versionCode 1
+                versionName "1.0"
+            }
+        }
+        dependencies {
+            implementation 'androidx.appcompat:appcompat:1.6.1'
+        }
+        EOF
+        
+        # Write AndroidManifest.xml with IR permissions
+        cat << 'EOF' > clean-app/app/src/main/AndroidManifest.xml
+        <?xml version="1.0" encoding="utf-8"?>
+        <manifest xmlns:android="http://android.com">
+            <uses-permission android:name="android.permission.TRANSMIT_IR" />
+            <uses-feature android:name="android.hardware.consumerir" android:required="true" />
+            <application android:allowBackup="true" android:label="Z-5500 Remote" android:theme="@style/Theme.AppCompat.NoActionBar">
+                <activity android:name="com.logitech.z5500remote.MainActivity" android:exported="true">
+                    <intent-filter>
+                        <action android:name="android.intent.action.MAIN" />
+                        <category android:name="android.intent.category.LAUNCHER" />
+                    </intent-filter>
+                </activity>
+            </application>
+        </manifest>
+        EOF
+        
+        # Write the core remote control code with Z-5500 NEC patterns
+        cat << 'EOF' > clean-app/app/src/main/java/com/logitech/z5500remote/MainActivity.java
+        package com.logitech.z5500remote;
+        import android.content.Context;
+        import android.hardware.ConsumerIrManager;
+        import android.os.Bundle;
+        import android.view.Gravity;
+        import android.widget.Button;
+        import android.widget.LinearLayout;
+        import android.widget.Toast;
+        import androidx.appcompat.app.AppCompatActivity;
+        public class MainActivity extends AppCompatActivity {
+            private ConsumerIrManager irManager;
+            private final int[] powerPattern = {9000, 4500, 560, 560, 560, 560, 560, 560, 560, 560, 560, 1690, 560, 560, 560, 560, 560, 560, 560, 1690, 560, 1690, 560, 1690, 560, 1690, 560, 1690, 560, 560, 560, 1690, 560, 1690, 560, 560, 560, 1690, 560, 560, 560, 1690, 560, 1690, 560, 560, 560, 560, 560, 560, 560, 1690, 560, 560, 560, 1690, 560, 560, 560, 560, 560, 1690, 560, 1690, 560, 1690, 560, 39415};
+            private final int[] volUpPattern = {9000, 4500, 560, 560, 560, 560, 560, 560, 560, 560, 560, 1690, 560, 560, 560, 560, 560, 560, 560, 1690, 560, 1690, 560, 1690, 560, 1690, 560, 1690, 560, 560, 560, 1690, 560, 1690, 560, 560, 560, 1690, 560, 1690, 560, 1690, 560, 560, 560, 560, 560, 560, 560, 560, 560, 560, 560, 560, 560, 560, 560, 1690, 560, 1690, 560, 1690, 560, 1690, 560, 1690, 560, 39415};
+            private final int[] volDownPattern = {9000, 4500, 560, 560, 560, 560, 560, 560, 560, 560, 560, 1690, 560, 560, 560, 560, 560, 560, 560, 1690, 560, 1690, 560, 1690, 560, 1690, 560, 1690, 560, 560, 560, 1690, 560, 1690, 560, 1690, 560, 1690, 560, 560, 560, 1690, 560, 560, 560, 560, 560, 560, 560, 560, 560, 560, 560, 560, 560, 1690, 560, 560, 560, 1690, 560, 1690, 560, 1690, 560, 1690, 560, 39415};
+            @Override
+            protected void onCreate(Bundle savedInstanceState) {
+                super.onCreate(savedInstanceState);
+                LinearLayout layout = new LinearLayout(this);
+                layout.setOrientation(LinearLayout.VERTICAL);
+                layout.setGravity(Gravity.CENTER);
+                layout.setBackgroundColor(0xFF121212);
+                irManager = (ConsumerIrManager) getSystemService(Context.CONSUMER_IR_SERVICE);
+                Button btnPower = createBtn("POWER / STANDBY", 0xFFD32F2F);
+                Button btnVolUp = createBtn("VOLUME UP (+)", 0xFF1976D2);
+                Button btnVolDown = createBtn("VOLUME DOWN (-)", 0xFF1976D2);
+                layout.addView(btnPower); layout.addView(btnVolUp); layout.addView(btnVolDown);
+                setContentView(layout);
+                btnPower.setOnClickListener(v -> transmit(powerPattern));
+                btnVolUp.setOnClickListener(v -> transmit(volUpPattern));
+                btnVolDown.setOnClickListener(v -> transmit(volDownPattern));
+            }
+            private Button createBtn(String text, int color) {
+                Button btn = new Button(this);
+                btn.setText(text); btn.setTextColor(0xFFFFFFFF); btn.setBackgroundColor(color);
+                LinearLayout.LayoutParams p = new LinearLayout.LayoutParams(600, 150);
+                p.setMargins(0, 30, 0, 30); btn.setLayoutParams(p);
+                return btn;
+            }
+            private void transmit(int[] pattern) {
+                if (irManager != null && irManager.hasIrEmitter()) { irManager.transmit(38000, pattern); }
+                else { Toast.makeText(this, "IR Blaster hardware not found", Toast.LENGTH_LONG).show(); }
+            }
+        }
+        EOF
 
     - name: Set up JDK 17
       uses: actions/setup-java@v4
       with:
         java-version: '17'
         distribution: 'temurin'
-        cache: gradle
 
-    - name: Build with Gradle
+    - name: Setup Gradle Build Tool
+      uses: gradle/actions/setup-gradle@v3
+
+    - name: Run App Compiler
       run: |
-        TARGET_DIR="."
-        if [ -d "android" ]; then TARGET_DIR="android"; fi
-        cd $TARGET_DIR
-        if [ ! -f "gradlew" ]; then
-          gradle wrapper --gradle-version 8.2
-        fi
+        cd clean-app
+        gradle wrapper --gradle-version 8.2
         chmod +x gradlew
         ./gradlew assembleDebug
 
-    - name: Upload Compiled APK Artifact
+    - name: Upload Clean Remote APK
       uses: actions/upload-artifact@v4
       with:
         name: z5500-remote-app
-        path: |
-          **/build/outputs/apk/debug/*.apk
-          **/app/build/outputs/apk/debug/*.apk
+        path: clean-app/app/build/outputs/apk/debug/*.apk
